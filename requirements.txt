@@ -1,0 +1,10 @@
+fastapi~=0.111.0
+uvicorn~=0.29.0
+opencv-python-headless
+psycopg2-binary
+numpy~=1.26.4
+python-dotenv~=1.0.1
+pandas~=2.2.2
+pillow~=10.3.0
+opencv-python~=4.9.0.80
+psycopg2~=2.9.9
