@@ -1,7 +1,7 @@
 
 from dotenv import load_dotenv
 import os
-from database import Database
+from app.database import Database
 
 load_dotenv()
 
