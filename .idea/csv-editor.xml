@@ -17,6 +17,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\image_dataset.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\sample_dataset.csv">
           <value>
             <Attribute>

@@ -1,3 +1,4 @@
+import cv2
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import SessionLocal, init_db
@@ -5,6 +6,9 @@ from app.crud import get_images_by_depth_range, create_resized_image
 from utils import resize_image, apply_colormap
 import pandas as pd
 import numpy as np
+from fastapi.responses import StreamingResponse
+import io
+import matplotlib as mpl
 
 app = FastAPI()
 
@@ -45,8 +49,8 @@ def upload_images(csv_file: str, db: Session = Depends(get_db)):
     return {"status": "images uploaded and resized"}
 
 
-@app.get("/images")
-def get_images(depth_min: float, depth_max: float, db: Session = Depends(get_db)):
+@app.get("/images/pixel_data")
+def get_images_with_pixel_data(depth_min: float, depth_max: float, db: Session = Depends(get_db)):
     images = get_images_by_depth_range(db, depth_min, depth_max)
     if not images:
         raise HTTPException(status_code=404, detail="Images not found")
@@ -61,6 +65,49 @@ def get_images(depth_min: float, depth_max: float, db: Session = Depends(get_db)
         })
 
     return result
+
+
+# Get images by depth range in image format
+@app.get("/images")
+def get_images(depth_min: float, depth_max: float, db: Session = Depends(get_db)):
+    images = get_images_by_depth_range(db, depth_min, depth_max)
+    if not images:
+        raise HTTPException(status_code=404, detail="Images not found")
+
+    def generate():
+        for image in images:
+            pixel_values = np.frombuffer(image.pixel_values, dtype=np.uint8).reshape(
+                (1, 150))  # Adjust reshaping as needed
+            colored_image = apply_colormap(pixel_values)
+            _, encoded_image = cv2.imencode('.png', colored_image)
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/png\r\n\r\n' + encoded_image.tobytes() + b'\r\n\r\n')
+
+    return StreamingResponse(generate(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+
+@app.get("/combined_images")
+def get_combined_images(depth_min: float, depth_max: float, db: Session = Depends(get_db)):
+    images = get_images_by_depth_range(db, depth_min, depth_max)
+    print(mpl.colormaps)
+    if not images:
+        raise HTTPException(status_code=404, detail="Images not found")
+
+    # Assume all images are the same size and can be vertically stacked
+    combined_image = None
+    for image in images:
+        pixel_values = np.frombuffer(image.pixel_values, dtype=np.uint8)
+        colored_image = apply_colormap(pixel_values.reshape((1, 150)))  #
+        if combined_image is None:
+            combined_image = colored_image
+        else:
+            combined_image = np.vstack((combined_image, colored_image))
+
+    # Encode the combined image to a PNG
+    _, buffer = cv2.imencode('.png', combined_image)
+    io_buffer = io.BytesIO(buffer)
+
+    return StreamingResponse(io_buffer, media_type="image/png")
 
 
 if __name__ == "__main__":
