@@ -24,7 +24,7 @@ The following assumptions were made to guide the development of the API:
    storage and retrieval.
 3. **API Functionality**: Users can fetch images based on depth criteria, and the images are processed on-the-fly to
    apply a predefined color map before delivery.
-4. **Storage**: Processed images are stored in a binary format in a relational database to facilitate easy retrieval
+4. **Storage**: Processed images are stored in a binary format in a relational database (postgreSQL) to facilitate easy retrieval
    based on depth queries.
 
 ## Setup and Installation
@@ -50,3 +50,7 @@ The following assumptions were made to guide the development of the API:
     ```bash
     docker-compose up
     ```
+   
+4. **Access the API**:
+    The API specs/docs are published using Postman.
+    The API is accessible at `https://documenter.getpostman.com/view/31106366/2sA3JRYe5V`.
