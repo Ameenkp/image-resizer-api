@@ -24,12 +24,12 @@ def on_startup():
     db = SessionLocal()
 
     # Read the CSV file and populate the database
-    df = pd.read_csv("../synthetic_image_data.csv")
-    resized_df = resize_image(df)
-    for _, row in resized_df.iterrows():
+    df = pd.read_csv("../image_dataset.csv")
+    for _, row in df.iterrows():
         depth = row['depth']
-        pixel_values = row.drop('depth').values.tobytes()
-        create_resized_image(db, depth, pixel_values)
+            pixel_values = row.drop('depth').values.astype(np.uint8)
+        resized_image = resize_image(pixel_values).tobytes()
+        create_resized_image(db, depth, resized_image)
 
     db.close()
 
@@ -45,8 +45,8 @@ def upload_images(csv_file: str, db: Session = Depends(get_db)):
     return {"status": "images uploaded and resized"}
 
 
-@app.get("/images/")
-def get_images(depth_min: int, depth_max: int, db: Session = Depends(get_db)):
+@app.get("/images")
+def get_images(depth_min: float, depth_max: float, db: Session = Depends(get_db)):
     images = get_images_by_depth_range(db, depth_min, depth_max)
     if not images:
         raise HTTPException(status_code=404, detail="Images not found")

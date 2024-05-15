@@ -3,26 +3,15 @@ import numpy as np
 from PIL import Image
 import matplotlib.cm as cm
 from PIL.Image import Resampling
+import cv2
 
 
-def resize_image(df, width=150):
-    pixel_data = df.drop(columns=['depth']).values
-    depth_data = df['depth'].values
-
-    original_width = pixel_data.shape[1]
-
-    resized_images = []
-    for row in pixel_data:
-        image = row.reshape(1, original_width)
-        image_pil = Image.fromarray(image.astype(np.uint8))
-        resized_image_pil = image_pil.resize((width, 1), Resampling.BILINEAR)
-        resized_image = np.array(resized_image_pil).flatten()
-        resized_images.append(resized_image)
-
-    resized_df = pd.DataFrame(resized_images, columns=[f'pixel_{i}' for i in range(width)])
-    resized_df.insert(0, 'depth', depth_data)
-
-    return resized_df
+def resize_image(image_data, original_width=200, new_width=150):
+    # Assuming image_data is a flat array, reshape it to (1, original_width)
+    image = image_data.reshape(1, original_width)
+    # Resize the image
+    resized_image = cv2.resize(image, (new_width, 1), interpolation=cv2.INTER_LINEAR)
+    return resized_image.flatten()
 
 
 def apply_colormap(image_array):
