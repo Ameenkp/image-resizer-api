@@ -1,11 +1,12 @@
-# Test your FastAPI endpoints
+# FastAPI
 
-GET http://0.0.0.1:8000/images
-Accept: application/json
+# curl --location 'http://localhost:8000/images?depth_min=9000&depth_max=9100'
+GET http://localhost:8000/images?depth_min=9000&depth_max=9100
 
 ###
-#
-#GET http://127.0.0.1:8000/
-#Accept: application/json
+
+# API to get the response in image format
+# curl --location 'http://localhost:8000/images/pixel_data?depth_min=9000&depth_max=9100'
+GET http://localhost:8000/images/pixel_data?depth_min=9000&depth_max=9100
 
 ###

@@ -1,19 +1,19 @@
-import cv2
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from app.database import SessionLocal, init_db
-from app.crud import get_images_by_depth_range, create_resized_image
-from utils import resize_image, apply_colormap
-import pandas as pd
-import numpy as np
-from fastapi.responses import StreamingResponse
 import io
-import matplotlib as mpl
+
+import cv2
+import numpy as np
+import pandas as pd
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
+
+from app.crud import get_images_by_depth_range, insert_data
+from app.database import SessionLocal, init_db
+from app.utils import resize_image, apply_colormap
 
 app = FastAPI()
 
 
-# Dependency to get the database session
 def get_db():
     db = SessionLocal()
     try:
@@ -24,29 +24,21 @@ def get_db():
 
 @app.on_event("startup")
 def on_startup():
-    init_db()  # Initialize the database tables
+    init_db()
     db = SessionLocal()
 
     # Read the CSV file and populate the database
-    df = pd.read_csv("../image_dataset.csv")
+    df = pd.read_csv("image_dataset.csv")
     for _, row in df.iterrows():
         depth = row['depth']
         pixel_values = row.drop('depth').values.astype(np.uint8)
         resized_image = resize_image(pixel_values).tobytes()
-        create_resized_image(db, depth, resized_image)
+        try:
+            insert_data(db, depth, resized_image)
+        except Exception:
+            continue
 
     db.close()
-
-
-@app.post("/images/upload/")
-def upload_images(csv_file: str, db: Session = Depends(get_db)):
-    df = pd.read_csv(csv_file)
-    resized_df = resize_image(df)
-    for _, row in resized_df.iterrows():
-        depth = row['depth']
-        pixel_values = row.drop('depth').values.tobytes()
-        create_resized_image(db, depth, pixel_values)
-    return {"status": "images uploaded and resized"}
 
 
 @app.get("/images/pixel_data")
@@ -67,29 +59,9 @@ def get_images_with_pixel_data(depth_min: float, depth_max: float, db: Session =
     return result
 
 
-# Get images by depth range in image format
 @app.get("/images")
-def get_images(depth_min: float, depth_max: float, db: Session = Depends(get_db)):
-    images = get_images_by_depth_range(db, depth_min, depth_max)
-    if not images:
-        raise HTTPException(status_code=404, detail="Images not found")
-
-    def generate():
-        for image in images:
-            pixel_values = np.frombuffer(image.pixel_values, dtype=np.uint8).reshape(
-                (1, 150))  # Adjust reshaping as needed
-            colored_image = apply_colormap(pixel_values)
-            _, encoded_image = cv2.imencode('.png', colored_image)
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/png\r\n\r\n' + encoded_image.tobytes() + b'\r\n\r\n')
-
-    return StreamingResponse(generate(), media_type="multipart/x-mixed-replace; boundary=frame")
-
-
-@app.get("/combined_images")
 def get_combined_images(depth_min: float, depth_max: float, db: Session = Depends(get_db)):
     images = get_images_by_depth_range(db, depth_min, depth_max)
-    print(mpl.colormaps)
     if not images:
         raise HTTPException(status_code=404, detail="Images not found")
 
