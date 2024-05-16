@@ -27,6 +27,21 @@ The following assumptions were made to guide the development of the API:
 4. **Storage**: Processed images are stored in a binary format in a relational database (postgreSQL) to facilitate easy retrieval
    based on depth queries.
 
+# Image Colormaps
+
+This document demonstrates the application of various color maps to a single image using Matplotlib. Below is the composite image showing the original image transformed with six different color maps.
+
+![Colormap Variations](composite_colormaps.png)
+
+The following color maps were used, from left to right:
+1. **viridis**
+2. **plasma**
+3. **inferno**
+4. **magma**
+5. **cividis**
+6. **twilight**
+
+Each c
 ## Setup and Installation
 
 ### Prerequisites
