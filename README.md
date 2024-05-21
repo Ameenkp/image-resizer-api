@@ -55,7 +55,7 @@ Each c
    ```bash
    git clone https://github.com/Ameenkp/image-resizer-api.git
    
-    cd image-resize-api
+    cd image-resizer-api
     ```
 2. **Build the Docker Image**:
     ```bash
